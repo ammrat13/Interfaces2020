@@ -1,2 +1,9 @@
-# MotorControl2020
-Motor Controllers written in python, using the gpio library to run the hardware.
+# Interfaces2020
+
+Python interfaces to work with the robot's hardware, including:
+ * Camera
+ * Wheel encoders
+ * DC motor controllers
+ * Stepper motor
+ * GPIO
+ * Time
