@@ -58,12 +58,30 @@ def set_system(stype, sim_config=None):
     if system_type == "sim":
         sim.start(sim_config)
 
-    elif system_type in ["raspi", "jetson"]:
-        board = Arduino()
-        
+    elif system_type == "raspi":
         pid_r = PID(KP, KI, KD)
         pid_r.sample_time = .01
 
+        pid_l = PID(KP, KI, KD)
+        pid_l.sample_time = .01
+
+        pwm_r = 0
+        pwm_l = 0
+
+    elif system_type == "jetson":
+        # Arduino setup
+        # Set up which pins are I/O and their defaults
+        board = Arduino()
+        board.pinMode(PIN_EN, "OUTPUT")
+        board.pinMode(PIN_IN1, "OUTPUT")
+        board.pinMode(PIN_IN2, "OUTPUT")
+        board.digitalWrite(PIN_EN, "HIGH")
+        board.digitalWrite(PIN_IN2, "LOW")
+        board.digitalWrite(PIN_IN4, "LOW")
+
+        # Setup the PID controllers and PWM
+        pid_r = PID(KP, KI, KD)
+        pid_r.sample_time = .01
         pid_l = PID(KP, KI, KD)
         pid_l.sample_time = .01
 
