@@ -62,7 +62,10 @@ def set_system(stype, sim_config=None):
         board = Arduino()
         
         pid_r = PID(KP, KI, KD)
+        pid_r.sample_time = .01
+
         pid_l = PID(KP, KI, KD)
+        pid_l.sample_time = .01
 
         pwm_r = 0
         pwm_l = 0
@@ -89,7 +92,7 @@ def is_enabled():
         return sim.get_enabled()
 
     elif system_type in ["raspi", "jetson"]:
-        pass
+        return None
 
     else:
         raise ValueError('System type has not been set')
@@ -101,16 +104,16 @@ def read_image():
         return sim.read_robot_cam()
 
     elif system_type in ["raspi", "jetson"]:
-        pass
+        return None
 
     else:
         raise ValueError('System type has not been set')
 
 
-def command_wheel_velocities(wheel_vels):
+def command_wheel_velocities(omega_r, omega_l):
 
     if system_type == "sim":
-        return sim.command_robot_vels(*wheel_vels)
+        return sim.command_robot_vels(omega_r, omega_l)
 
 
     elif system_type == "raspi":
@@ -118,7 +121,22 @@ def command_wheel_velocities(wheel_vels):
 
 
     elif system_type == "jetson":
-        pass
+        # Set the setpoints of the PID controllers
+        pidRight.setpoint, pidLeft.setpoint = omegaRight, omegaLeft
+
+        # Get the output of the PID loops
+        # Make sure to scale the output from rad/s to PWM -- thus the 
+        #   arbitrary constant of 300
+        pwm_r += 300 * pid_r(omega_r)
+        pwm_l += 300 * pid_l(omega_l)
+
+        # Normalize them to the range of ints between 0 and 255
+        pwm_r = int(max(0, min(255, pwm_r)))
+        pwm_l = int(max(0, min(255, pwm_l)))
+
+        # Actually do the write
+        board.analogWrite(PIN_IN1, pwm_r)
+        board.analogWrite(PIN_IN3, pwm_l)
 
 
     else:
@@ -126,17 +144,34 @@ def command_wheel_velocities(wheel_vels):
 
 def read_wheel_velocities():
 
+    # Return format is a tuple of right and left
+
     if system_type == "sim":
         return sim.read_robot_vels()
 
 
     elif system_type == "raspi":
-        pass
+        return None
 
 
     elif system_type == "jetson":
-        pass
+        # Get the pulse widths from the board
+        # Set the timeout in the arduino code
+        pulseRight = board.pulseIn(PIN_ENC1, "HIGH")
+        pulseLeft = board.pulseIn(PIN_ENC3, "HIGH")
 
+        # Do the calculation for the right wheel
+        # From the old arduino code -- look there for magic number explanation
+        omegaRight = float('inf')
+        if pulseRight != 0:
+            omegaRight = 2*pi / (pulseRight * 2.24886e-3)
+
+        # Same for the left wheel
+        omegaLeft = float('inf')
+        if pulseLeft != 0:
+            omegaLeft = 2*pi / (pulseLeft * 2.24886e-3)
+
+        return (omegaRight, omegaLeft)
 
     else:
         raise ValueError('System type has not been set')
