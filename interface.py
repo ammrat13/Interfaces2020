@@ -5,7 +5,7 @@ Author:        Ammar Ratnani
 Last Modified: Ammar on 2/22
 """
 
-from Arduino import Arduino
+from arduino import Arduino
 from simple_pid import PID
 from math import sin, cos, pi, sqrt
 from time import time
