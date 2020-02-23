@@ -5,11 +5,11 @@ Author:        Ammar Ratnani
 Last Modified: Ammar on 2/22
 """
 
-from arduino import Arduino
 from simple_pid import PID
 from math import sin, cos, pi, sqrt
 from time import time
 
+from iface_lib.arduino import Arduino
 import sim
 
 
