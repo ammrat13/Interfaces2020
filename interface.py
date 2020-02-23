@@ -180,12 +180,12 @@ def read_wheel_velocities():
 
         # Do the calculation for the right wheel
         # From the old arduino code -- look there for magic number explanation
-        omegaRight = float('inf')
+        omegaRight = 0.0
         if pulseRight != 0:
             omegaRight = 2*pi / (pulseRight * 2.24886e-3)
 
         # Same for the left wheel
-        omegaLeft = float('inf')
+        omegaLeft = 0.0
         if pulseLeft != 0:
             omegaLeft = 2*pi / (pulseLeft * 2.24886e-3)
 
