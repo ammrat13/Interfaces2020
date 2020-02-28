@@ -3,6 +3,9 @@
 #define ENABLED_DEBOUNCE_T (200)
 #define PULSE_IN_TOUT (50000)
 
+#define PIN_EN_DETECT 2
+#define PIN_EN_LED 1
+
 
 boolean connected = false;
 
@@ -183,6 +186,7 @@ void SerialParser(void) {
 void enableFallingHandler() {
     if(millis() > enabledDebounce + ENABLED_DEBOUNCE_T){
         enabled = !enabled;
+        digitalWrite(PIN_EN_LED, enabled ? HIGH : LOW);
     }
     enabledDebounce = millis();
 }
@@ -195,9 +199,13 @@ void setup()  {
     Serial.begin(115200);
     
     // Create the handler for enable
-    pinMode(2, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(2), enableRisingHandler, RISING);
-    attachInterrupt(digitalPinToInterrupt(2), enableFallingHandler, FALLING);
+    pinMode(PIN_EN_DETECT, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(PIN_EN_DETECT), enableRisingHandler, RISING);
+    attachInterrupt(digitalPinToInterrupt(PIN_EN_DETECT), enableFallingHandler, FALLING);
+
+    // For the LED
+    pinMode(PIN_EN_LED, OUTPUT);
+    digitalWrite(PIN_EN_LED, LOW);
 }
 
 void loop() {
