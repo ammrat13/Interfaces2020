@@ -146,8 +146,32 @@ class Arduino(object):
             return None
 
 
+    def enabled(self):
+        cmd_str = build_cmd_str("en")
+        try:
+            self.sr.write(str.encode(cmd_str))
+            self.sr.flush()
+        except:
+            pass
+
+        rd = self.sr.readline().decode("utf-8").replace("\r\n", "")
+        try:
+            return rd
+        except:
+            return None
+
+
     def stRun(self):
         cmd_str = build_cmd_str("sru")
+        try:
+            self.sr.write(str.encode(cmd_str))
+            self.sr.flush()
+        except:
+            pass
+
+
+    def stRunSpeed(self):
+        cmd_str = build_cmd_str("srs")
         try:
             self.sr.write(str.encode(cmd_str))
             self.sr.flush()
@@ -174,7 +198,7 @@ class Arduino(object):
 
 
     def stMove(self, pos):
-        cmd_str = build_cmd_str("sss", (pos,))
+        cmd_str = build_cmd_str("smm", (pos,))
         try:
             self.sr.write(str.encode(cmd_str))
             self.sr.flush()

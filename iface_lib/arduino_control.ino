@@ -1,10 +1,15 @@
 #include <AccelStepper.h>
 
+#define ENABLED_DEBOUNCE_T (200)
 #define PULSE_IN_TOUT (50000)
 
 
-AccelStepper stepper(AccelStepper::FULL4WIRE, 8, 9, 10, 11, true);
 boolean connected = false;
+
+boolean enabled = false;
+unsigned long enabledDebounce = 0;
+
+AccelStepper stepper(AccelStepper::FULL4WIRE, 8, 9, 10, 11, true);
 
 
 int str2int (String str_value) {
@@ -83,8 +88,16 @@ void PulseInHandler(String data){
 }
 
 
+void Enabled() {
+    Serial.println(enabled);
+}
+
 void STRun(){
     stepper.run();
+}
+
+void STRunSpeed(){
+    stepper.runSpeed();
 }
 
 void STSetMaxSpeed(String data){
@@ -139,8 +152,14 @@ void SerialParser(void) {
     } else if (cmd == "pi") {
         PulseInHandler(data);
 
+    } else if (cmd == "en") {
+        Enabled();
+
     } else if (cmd == "sru") {
         STRun();
+
+    } else if (cmd == "srs") {
+        STRunSpeed();
 
     } else if (cmd == "sms") {
         STSetMaxSpeed(data);
@@ -157,11 +176,28 @@ void SerialParser(void) {
     } else if (cmd == "sst") {
         STStop();
     }
+
 }
 
 
+void enableFallingHandler() {
+    if(millis() > enabledDebounce + ENABLED_DEBOUNCE_T){
+        enabled = !enabled;
+    }
+    enabledDebounce = millis();
+}
+
+void enableRisingHandler() {
+    enabledDebounce = millis();
+}
+
 void setup()  {
-    Serial.begin(115200); 
+    Serial.begin(115200);
+    
+    // Create the handler for enable
+    pinMode(2, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(2), enableRisingHandler, RISING);
+    attachInterrupt(digitalPinToInterrupt(2), enableFallingHandler, FALLING);
 }
 
 void loop() {

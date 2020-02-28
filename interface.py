@@ -10,7 +10,7 @@ from math import sin, cos, pi, sqrt
 from time import time
 
 from iface_lib.arduino import Arduino
-import sim
+#import sim
 
 
 
@@ -19,7 +19,7 @@ PIN_EN = 13
 PIN_IN1 = 9
 PIN_IN2 = 8
 PIN_IN3 = 3
-PIN_IN4 = 2
+PIN_IN4 = 1
 
 PIN_ENC1 = 10
 PIN_ENC3 = 5
@@ -77,7 +77,7 @@ def set_system(stype, sim_config=None):
         board.pinMode(PIN_IN2, "OUTPUT")
         board.digitalWrite(PIN_EN, "HIGH")
         board.digitalWrite(PIN_IN2, "LOW")
-        board.digitalWrite(PIN_IN4, "LOW")
+        #board.digitalWrite(PIN_IN4, "LOW")
 
         # Setup the PID controllers and PWM
         pid_r = PID(KP, KI, KD)
@@ -109,8 +109,11 @@ def is_enabled():
     if system_type == "sim":
         return sim.get_enabled()
 
-    elif system_type in ["raspi", "jetson"]:
+    elif system_type == "raspi":
         return None
+
+    elif system_type == "jetson":
+        return board.enabled()
 
     else:
         raise ValueError('System type has not been set')
