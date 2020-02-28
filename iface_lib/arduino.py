@@ -14,12 +14,12 @@ def build_cmd_str(cmd, args=None):
     return "@{cmd}%{args}$!".format(cmd=cmd, args=args)
 
 
-def find_port(baud, timeout):
+def find_port(baud):
     ports = glob.glob("/dev/ttyUSB*") + glob.glob("/dev/ttyACM*")
 
     for p in ports:
         try:
-            sr = serial.Serial(p, baud, timeout=timeout)
+            sr = serial.Serial(p, baud)
         except (serial.serialutil.SerialException, OSError) as e:
             continue
 
@@ -34,10 +34,10 @@ def find_port(baud, timeout):
 class Arduino(object):
 
 
-    def __init__(self, baud=115200, port=None, timeout=2, sr=None):
+    def __init__(self, baud=115200, port=None, sr=None):
         if not sr:
             if not port:
-                sr = find_port(baud, timeout)
+                sr = find_port(baud)
                 if not sr:
                     raise ValueError("Could not find port.")
             else:
@@ -48,102 +48,10 @@ class Arduino(object):
         self.sr = sr
 
 
-    def digitalWrite(self, pin, val):
-        if val.upper() == "LOW":
-            pin_ = -pin
-        else:
-            pin_ = pin
-
-        cmd_str = build_cmd_str("dw", (pin_,))
-        try:
-            self.sr.write(str.encode(cmd_str))
-            self.sr.flush()
-        except:
-            pass
-
-
-    def analogWrite(self, pin, val):
-        if val > 255:
-            val = 255
-        elif val < 0:
-            val = 0
-
-        cmd_str = build_cmd_str("aw", (pin, val))
-        try:
-            self.sr.write(str.encode(cmd_str))
-            self.sr.flush()
-        except:
-            pass
-
-
-    def analogRead(self, pin):
-        cmd_str = build_cmd_str("ar", (pin,))
-        try:
-            self.sr.write(str.encode(cmd_str))
-            self.sr.flush()
-        except:
-            pass
-
-        rd = self.sr.readline().decode("utf-8").replace("\r\n", "")
-        try:
-            return int(rd)
-        except:
-            return None
-
-
-    def pinMode(self, pin, val):
-        if val == "INPUT":
-            pin_ = -pin
-        else:
-            pin_ = pin
-
-        cmd_str = build_cmd_str("pm", (pin_,))
-        try:
-            self.sr.write(str.encode(cmd_str))
-            self.sr.flush()
-        except:
-            pass
-
-
-    def pulseIn(self, pin, val):
-        if val.upper() == "LOW":
-            pin_ = -pin
-        else:
-            pin_ = pin
-
-        cmd_str = build_cmd_str("pi", (pin_,))
-        try:
-            self.sr.write(str.encode(cmd_str))
-            self.sr.flush()
-        except:
-            pass
-
-        rd = self.sr.readline().decode("utf-8").replace("\r\n", "")
-        try:
-            return float(rd)
-        except:
-            return None
-
-
     def close(self):
         if self.sr.isOpen():
             self.sr.flush()
             self.sr.close()
-
-
-    def digitalRead(self, pin):
-        cmd_str = build_cmd_str("dr", (pin,))
-        try:
-            self.sr.write(str.encode(cmd_str))
-            self.sr.flush()
-        except:
-            pass
-
-        rd = self.sr.readline().decode("utf-8").replace("\r\n", "")
-        try:
-            return int(rd)
-        except:
-            return None
 
 
     def enabled(self):
@@ -161,8 +69,8 @@ class Arduino(object):
             return None
 
 
-    def stRun(self):
-        cmd_str = build_cmd_str("sru")
+    def setTargetVels(self, w_r, w_l):
+        cmd_str = build_cmd_str("tv", (w_r, w_l))
         try:
             self.sr.write(str.encode(cmd_str))
             self.sr.flush()
@@ -170,44 +78,8 @@ class Arduino(object):
             pass
 
 
-    def stRunSpeed(self):
-        cmd_str = build_cmd_str("srs")
-        try:
-            self.sr.write(str.encode(cmd_str))
-            self.sr.flush()
-        except:
-            pass
-
-
-    def stSetMaxSpeed(self, speed):
-        cmd_str = build_cmd_str("sms", (speed,))
-        try:
-            self.sr.write(str.encode(cmd_str))
-            self.sr.flush()
-        except:
-            pass
-
-
-    def stSetSpeed(self, speed):
-        cmd_str = build_cmd_str("sss", (speed,))
-        try:
-            self.sr.write(str.encode(cmd_str))
-            self.sr.flush()
-        except:
-            pass
-
-
-    def stMove(self, pos):
-        cmd_str = build_cmd_str("smm", (pos,))
-        try:
-            self.sr.write(str.encode(cmd_str))
-            self.sr.flush()
-        except:
-            pass
-
-
-    def stCurrentPosition(self):
-        cmd_str = build_cmd_str("scp")
+    def getVels(self):
+        cmd_str = build_cmd_str("gv")
         try:
             self.sr.write(str.encode(cmd_str))
             self.sr.flush()
@@ -216,9 +88,21 @@ class Arduino(object):
 
         rd = self.sr.readline().decode("utf-8").replace("\r\n", "")
         try:
-            return int(rd)
+            retVs = list(map(int, rd.split(',')))
+            return (retVs[0], retVs[1])
         except:
             return None
+
+
+    def stRunToNewPosition(self, pos):
+        cmd_str = build_cmd_str("srt", (pos,))
+        try:
+            self.sr.write(str.encode(cmd_str))
+            self.sr.flush()
+        except:
+            pass
+
+        rd = self.sr.readline().decode("utf-8").replace("\r\n", "")
 
 
     def stStop(self):
