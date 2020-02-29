@@ -161,10 +161,10 @@ void readMotorVels() {
     wL = pL == 0 ? 0.0 : TWO_PI / (pL * 2.4886e-3);
 }
 void writeMotorDirs() {
-    digitalWrite(PIN_RDIR1, wR >= 0.0 ? HIGH : LOW);
-    digitalWrite(PIN_RDIR2, wR >= 0.0 ? LOW : HIGH);
-    digitalWrite(PIN_LDIR1, wL >= 0.0 ? HIGH : LOW);
-    digitalWrite(PIN_LDIR2, wL >= 0.0 ? LOW : HIGH);
+    digitalWrite(PIN_RDIR1, wTargR >= 0.0 ? HIGH : LOW);
+    digitalWrite(PIN_RDIR2, wTargR >= 0.0 ? LOW : HIGH);
+    digitalWrite(PIN_LDIR1, wTargL >= 0.0 ? HIGH : LOW);
+    digitalWrite(PIN_LDIR2, wTargL >= 0.0 ? LOW : HIGH);
 }
 void writeMotorVels() {
     // Bound to integers 0 - 255
