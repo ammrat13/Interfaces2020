@@ -69,8 +69,8 @@ class Arduino(object):
             return None
 
 
-    def setTargetVels(self, w_r, w_l):
-        cmd_str = build_cmd_str("tv", (w_r, w_l))
+    def setTargetVels(self, w_r, w_l, pwm_cr, pwm_cl):
+        cmd_str = build_cmd_str("tv", (w_r, w_l, pwm_cr, pwm_cl))
         try:
             self.sr.write(str.encode(cmd_str))
             self.sr.flush()
@@ -88,8 +88,7 @@ class Arduino(object):
 
         rd = self.sr.readline().decode("utf-8").replace("\r\n", "")
         try:
-            retVs = list(map(int, rd.split(',')))
-            return (retVs[0], retVs[1])
+            return tuple(map(int, rd.split(',')))
         except:
             return None
 

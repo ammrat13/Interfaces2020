@@ -8,6 +8,7 @@
 
 #define W_TO_PWM (300)
 
+
 #define STEPPER_MAX_SPEED (500)
 
 #define ENABLED_DEBOUNCE_T (200)
@@ -18,8 +19,7 @@
 #define PIN_EN_LED (22)
 
 #define PIN_MEN (0)
-#define PIN_RENC (14)
-#define PIN_LENC (15)
+
 #define PIN_RPWM (4)
 #define PIN_LPWM (5)
 #define PIN_RDIR1 (10)
@@ -27,10 +27,18 @@
 #define PIN_LDIR1 (12)
 #define PIN_LDIR2 (13)
 
+#define PIN_RENC (14)
+#define PIN_LENC (15)
+#define PIN_CRENC (16)
+#define PIN_CLENC (17)
+
 #define PIN_ST0 (50)
 #define PIN_ST1 (51)
 #define PIN_ST2 (52)
 #define PIN_ST3 (53)
+
+#define PIN_CRPWM (6)
+#define PIN_CLPWM (7)
 
 
 boolean connected = false;
@@ -53,6 +61,13 @@ double wPidL;
 PID pidL(&wL, &wPidL, &wTargL, MOTOR_KP, MOTOR_KI, MOTOR_KD, DIRECT);
 
 
+int pwmCR;
+double wCR;
+
+int pwmCL;
+double wCL;
+
+
 void split(String results[], int len, String input, char spChar) {
     String temp = input;
     for (int i = 0; i < len; i++) {
@@ -73,18 +88,26 @@ void Enabled() {
 // Parameters are right then left
 void SetTargVels(String data) {
     // Get the parameters
-    String ps[2];
-    split(ps, 2, data, '%');
+    String ps[4];
+    split(ps, 4, data, '%');
     // Write them
     wTargR = ps[0].toDouble();
     wTargL = ps[1].toDouble();
+    // Collectors update immediately because no PID
+    pwmCR = ps[2].toInt();
+    pwmCL = ps[3].toInt();
 }
 
 // Also have a getter
 void GetVels() {
     Serial.print(wR, 15);
     Serial.print(",");
-    Serial.println(wL, 15);
+    Serial.print(wL, 15);
+    Serial.print(",");
+    Serial.print(wCR, 15);
+    Serial.print(",");
+    Serial.print(wCL, 15);
+    Serial.println("");
 }
 
 
@@ -155,10 +178,14 @@ void readMotorVels() {
     // Read
     int pR = pulseIn(PIN_RENC, HIGH, PULSE_IN_TOUT);
     int pL = pulseIn(PIN_LENC, HIGH, PULSE_IN_TOUT);
+    int pCR = pulseIn(PIN_CRENC, HIGH, PULSE_IN_TOUT);
+    int pCL = pulseIn(PIN_CLENC, HIGH, PULSE_IN_TOUT);
     // Make sure we actually got a length of time
     // See `DeadReckoning.ino` for magic number
     wR = pR == 0 ? 0.0 : TWO_PI / (pR * 2.4886e-3);
     wL = pL == 0 ? 0.0 : TWO_PI / (pL * 2.4886e-3);
+    wCR = pCR == 0 ? 0.0 : TWO_PI / (pCR * 2.4886e-3);
+    wCL = pCL == 0 ? 0.0 : TWO_PI / (pCL * 2.4886e-3);
 }
 void writeMotorDirs() {
     digitalWrite(PIN_RDIR1, wTargR >= 0.0 ? HIGH : LOW);
@@ -170,6 +197,8 @@ void writeMotorVels() {
     // Bound to integers 0 - 255
     analogWrite(PIN_RPWM, max(0, min(255, (int) (W_TO_PWM * wPidR))));
     analogWrite(PIN_LPWM, max(0, min(255, (int) (W_TO_PWM * wPidL))));
+    analogWrite(PIN_CRPWM, max(0, min(255, pwmCR)));
+    analogWrite(PIN_CLPWM, max(0, min(255, pwmCL)));
 }
 
 
@@ -189,6 +218,8 @@ void setup()  {
     pinMode(PIN_MEN, OUTPUT);
     pinMode(PIN_RPWM, OUTPUT);
     pinMode(PIN_LPWM, OUTPUT);
+    pinMode(PIN_CRPWM, OUTPUT);
+    pinMode(PIN_CLPWM, OUTPUT);
     pinMode(PIN_RDIR1, OUTPUT);
     pinMode(PIN_RDIR2, OUTPUT);
     pinMode(PIN_LDIR1, OUTPUT);
