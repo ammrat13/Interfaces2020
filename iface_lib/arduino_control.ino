@@ -14,21 +14,23 @@
 #define PULSE_IN_TOUT (50000)
 
 
-#define PIN_EN_DETECT ()
-#define PIN_EN_LED ()
+#define PIN_EN_DETECT (21)
+#define PIN_EN_LED (22)
 
-#define PIN_MEN ()
-#define PIN_RENC ()
-#define PIN_LENC ()
-#define PIN_RPWM ()
-#define PIN_RGND ()
-#define PIN_LPWM ()
-#define PIN_LGND ()
+#define PIN_MEN (0)
+#define PIN_RENC (14)
+#define PIN_LENC (15)
+#define PIN_RPWM (4)
+#define PIN_LPWM (5)
+#define PIN_RDIR1 (10)
+#define PIN_RDIR2 (11)
+#define PIN_LDIR1 (12)
+#define PIN_LDIR2 (13)
 
-#define PIN_ST0 ()
-#define PIN_ST1 ()
-#define PIN_ST2 ()
-#define PIN_ST3 ()
+#define PIN_ST0 (50)
+#define PIN_ST1 (51)
+#define PIN_ST2 (52)
+#define PIN_ST3 (53)
 
 
 boolean connected = false;
@@ -158,6 +160,12 @@ void readMotorVels() {
     wR = pR == 0 ? 0.0 : TWO_PI / (pR * 2.4886e-3);
     wL = pL == 0 ? 0.0 : TWO_PI / (pL * 2.4886e-3);
 }
+void writeMotorDirs() {
+    digitalWrite(PIN_RDIR1, wR >= 0.0 ? HIGH : LOW);
+    digitalWrite(PIN_RDIR2, wR >= 0.0 ? LOW : HIGH);
+    digitalWrite(PIN_LDIR1, wL >= 0.0 ? HIGH : LOW);
+    digitalWrite(PIN_LDIR2, wL >= 0.0 ? LOW : HIGH);
+}
 void writeMotorVels() {
     // Bound to integers 0 - 255
     analogWrite(PIN_RPWM, max(0, min(255, (int) (W_TO_PWM * wPidR))));
@@ -181,11 +189,11 @@ void setup()  {
     pinMode(PIN_MEN, OUTPUT);
     pinMode(PIN_RPWM, OUTPUT);
     pinMode(PIN_LPWM, OUTPUT);
-    pinMode(PIN_RGND, OUTPUT);
-    pinMode(PIN_LGND, OUTPUT);
-    digitalWrite(PIN_EN, HIGH);
-    digitalWrite(PIN_RGND, LOW);
-    digitalWrite(PIN_LGND, LOW);
+    pinMode(PIN_RDIR1, OUTPUT);
+    pinMode(PIN_RDIR2, OUTPUT);
+    pinMode(PIN_LDIR1, OUTPUT);
+    pinMode(PIN_LDIR2, OUTPUT);
+    digitalWrite(PIN_MEN, HIGH);
 
     // Motor encoders
     pinMode(PIN_RENC, INPUT);
@@ -203,6 +211,7 @@ void loop() {
     readMotorVels();
     pidR.Compute();
     pidL.Compute();
+    writeMotorDirs();
     writeMotorVels();
 
     SerialParser();
