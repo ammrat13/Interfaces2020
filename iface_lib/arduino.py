@@ -93,8 +93,17 @@ class Arduino(object):
             return None
 
 
-    def stRunToNewPosition(self, pos):
-        cmd_str = build_cmd_str("srt", (pos,))
+    def stMove(self, relPos):
+        cmd_str = build_cmd_str("smv", (relPos,))
+        try:
+            self.sr.write(str.encode(cmd_str))
+            self.sr.flush()
+        except:
+            pass
+
+
+    def stDistanceToGo(self):
+        cmd_str = build_cmd_str("sdg")
         try:
             self.sr.write(str.encode(cmd_str))
             self.sr.flush()
@@ -102,12 +111,7 @@ class Arduino(object):
             pass
 
         rd = self.sr.readline().decode("utf-8").replace("\r\n", "")
-
-
-    def stStop(self):
-        cmd_str = build_cmd_str("sst")
         try:
-            self.sr.write(str.encode(cmd_str))
-            self.sr.flush()
+            return int(rd)
         except:
             pass

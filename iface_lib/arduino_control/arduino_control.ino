@@ -137,13 +137,12 @@ void GetVels() {
 
 
 // We only need minimal stepper handlers
-// Just get to the target position
-void STRunToNewPosition(String data){
-    stepper.runToNewPosition(data.toInt());
-    Serial.println("D");
+// Just get to the target position asynchronously
+void STMove(String data){
+    stepper.move(data.toInt());
 }
-void STStop(){
-    stepper.stop();
+void STDistanceToGo(){
+    Serial.println(stepper.distanceToGo());
 }
 
 
@@ -173,10 +172,10 @@ void SerialParser(void) {
         } else if (cmd == "gv") {
             GetVels();
 
-        } else if (cmd == "srt") {
+        } else if (cmd == "smv") {
             STRunToNewPosition(data);
 
-        } else if (cmd == "sst") {
+        } else if (cmd == "sdg") {
             STStop();
         }
     }
