@@ -207,14 +207,18 @@ void enableFallingHandler() {
 
 void readMotorVels() {
     // Do the movement motors first
+    // Remember to do both direction and magnitude
     // Remember to check for 0 for PulseIn -- not moving
     int pR = pulseIn(PIN_RENC1, HIGH, PULSE_IN_TOUT);
-    wR = pR == 0 ? 0.0 : TWO_PI / (pR * PULSE_TO_FREQ);
+    wR = digitalRead(PIN_RENC2) == HIGH ? 1.0 : -1.0;
+    wR *= pR == 0 ? 0.0 : TWO_PI / (pR * PULSE_TO_FREQ);
     int pL = pulseIn(PIN_LENC1, HIGH, PULSE_IN_TOUT);
-    wL = pL == 0 ? 0.0 : TWO_PI / (pL * PULSE_TO_FREQ);
+    wL = digitalRead(PIN_LENC2) == HIGH ? 1.0 : -1.0;
+    wL *= pL == 0 ? 0.0 : TWO_PI / (pL * PULSE_TO_FREQ);
 
-    // Only do the calculation for collectors if we have encoders
-    // Otherwise, just write 0
+    // Only do the calculation for collectors if we have encoders otherwise, 
+    //  arbitrarily write 0
+    // Note we don't have to do direction computations for the collectors
     #if defined(ARDUINO_AVR_MEGA2560)
         int pCR = pulseIn(PIN_CRENC, HIGH, PULSE_IN_TOUT);
         wCR = pCR == 0 ? 0.0 : TWO_PI / (pCR * PULSE_TO_FREQ);
