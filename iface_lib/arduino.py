@@ -69,7 +69,7 @@ class Arduino(object):
             return None
 
 
-    def setTargetVels(self, w_r, w_l, pwm_cr, pwm_cl):
+    def setTargetVels(self, w_r, w_l, pwm_cr=255, pwm_cl=255):
         cmd_str = build_cmd_str("tv", (w_r, w_l, pwm_cr, pwm_cl))
         try:
             self.sr.write(str.encode(cmd_str))

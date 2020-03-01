@@ -34,10 +34,12 @@
     #define PIN_LDIR1 (12)
     #define PIN_LDIR2 (13)
 
-    #define PIN_RENC (22)
-    #define PIN_LENC (23)
-    #define PIN_CRENC (24)
-    #define PIN_CLENC (25)
+    #define PIN_RENC1 (22)
+    #define PIN_RENC2 (23)
+    #define PIN_LENC1 (24)
+    #define PIN_LENC2 (25)
+    #define PIN_CRENC (26)
+    #define PIN_CLENC (27)
 
     #define PIN_ST0 (50)
     #define PIN_ST1 (51)
@@ -56,8 +58,10 @@
     #define PIN_LDIR1 (A2)
     #define PIN_LDIR2 (A3)
 
-    #define PIN_RENC (12)
-    #define PIN_LENC (13)
+    #define PIN_RENC1 (7)
+    #define PIN_RENC2 (8)
+    #define PIN_LENC1 (12)
+    #define PIN_LENC2 (13)
 
     #define PIN_ST0 (4)
     #define PIN_ST1 (5)
@@ -204,17 +208,17 @@ void enableFallingHandler() {
 void readMotorVels() {
     // Do the movement motors first
     // Remember to check for 0 for PulseIn -- not moving
-    int pR = pulseIn(PIN_RENC, HIGH, PULSE_IN_TOUT);
-    int pL = pulseIn(PIN_LENC, HIGH, PULSE_IN_TOUT);
+    int pR = pulseIn(PIN_RENC1, HIGH, PULSE_IN_TOUT);
     wR = pR == 0 ? 0.0 : TWO_PI / (pR * PULSE_TO_FREQ);
+    int pL = pulseIn(PIN_LENC1, HIGH, PULSE_IN_TOUT);
     wL = pL == 0 ? 0.0 : TWO_PI / (pL * PULSE_TO_FREQ);
 
     // Only do the calculation for collectors if we have encoders
     // Otherwise, just write 0
     #if defined(ARDUINO_AVR_MEGA2560)
         int pCR = pulseIn(PIN_CRENC, HIGH, PULSE_IN_TOUT);
-        int pCL = pulseIn(PIN_CLENC, HIGH, PULSE_IN_TOUT);
         wCR = pCR == 0 ? 0.0 : TWO_PI / (pCR * PULSE_TO_FREQ);
+        int pCL = pulseIn(PIN_CLENC, HIGH, PULSE_IN_TOUT);
         wCL = pCL == 0 ? 0.0 : TWO_PI / (pCL * PULSE_TO_FREQ);
     #elif defined(ARDUINO_AVR_UNO)
         wCR = 0.0;
@@ -270,8 +274,10 @@ void setup()  {
     pinMode(PIN_LDIR1, OUTPUT);
     pinMode(PIN_LDIR2, OUTPUT);
     // Encoders
-    pinMode(PIN_RENC, INPUT);
-    pinMode(PIN_LENC, INPUT);
+    pinMode(PIN_RENC1, INPUT);
+    pinMode(PIN_RENC2, INPUT);
+    pinMode(PIN_LENC1, INPUT);
+    pinMode(PIN_LENC2, INPUT);
 
     // Collector motor setup
     #if defined(ARDUINO_AVR_MEGA2560)
