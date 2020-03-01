@@ -2,53 +2,76 @@
 #include <AccelStepper.h>
 
 
-#define MOTOR_KP (.035)
+// Drive motor constants
+#define MOTOR_KP (.035)             // These constants are omega to omega
 #define MOTOR_KI (.0003)
 #define MOTOR_KD (.0005)
+#define PULSE_TO_FREQ (2.4886e-3)   // See ArduinoControl.ino for explanation
+#define W_TO_PWM (300)              // Approximation
+#define PULSE_IN_TOUT (50000)       // For motor speed calculation
 
-#define W_TO_PWM (300)
-
-
+// Stepper motor constants
 #define STEPPER_MAX_SPEED (500)
 
+// For the enabled button
 #define ENABLED_DEBOUNCE_T (200)
-#define PULSE_IN_TOUT (50000)
 
 
-#define PIN_EN_DETECT (21)
-#define PIN_EN_LED (22)
+// Pin setup
+// Depends on the board, see Google Sheet for details
+// Detection from https://electronics.stackexchange.com/questions/58386/how-can-i-detect-which-arduino-board-or-which-controller-in-software/280379
+#if defined(ARDUINO_AVR_MEGA2560)
+    #define PIN_EN_DETECT (3)
+    #define PIN_EN_LED (49)
 
-#define PIN_MEN (0)
+    #define PIN_RPWM (4)
+    #define PIN_LPWM (5)
+    #define PIN_CRPWM (6)
+    #define PIN_CLPWM (7)
 
-#define PIN_RPWM (4)
-#define PIN_LPWM (5)
-#define PIN_RDIR1 (10)
-#define PIN_RDIR2 (11)
-#define PIN_LDIR1 (12)
-#define PIN_LDIR2 (13)
+    #define PIN_RDIR1 (10)
+    #define PIN_RDIR2 (11)
+    #define PIN_LDIR1 (12)
+    #define PIN_LDIR2 (13)
 
-#define PIN_RENC (14)
-#define PIN_LENC (15)
-#define PIN_CRENC (16)
-#define PIN_CLENC (17)
+    #define PIN_RENC (22)
+    #define PIN_LENC (23)
+    #define PIN_CRENC (24)
+    #define PIN_CLENC (25)
 
-#define PIN_ST0 (50)
-#define PIN_ST1 (51)
-#define PIN_ST2 (52)
-#define PIN_ST3 (53)
+    #define PIN_ST0 (50)
+    #define PIN_ST1 (51)
+    #define PIN_ST2 (52)
+    #define PIN_ST3 (53)
+#elif defined(ARDUINO_AVR_UNO)
+    #define PIN_EN_DETECT (2)
+    #define PIN_EN_LED (A5)
 
-#define PIN_CRPWM (6)
-#define PIN_CLPWM (7)
+    #define PIN_RPWM (9)
+    #define PIN_LPWM (10)
+    #define PIN_CPWM (11)
 
+    #define PIN_RDIR1 (A0)
+    #define PIN_RDIR2 (A1)
+    #define PIN_LDIR1 (A2)
+    #define PIN_LDIR2 (A3)
 
-boolean connected = false;
+    #define PIN_RENC (12)
+    #define PIN_LENC (13)
+
+    #define PIN_ST0 (4)
+    #define PIN_ST1 (5)
+    #define PIN_ST2 (6)
+    #define PIN_ST3 (7)
+#else
+    #error "Only supported platforms are Uno and Mega"
+#endif
+
 
 boolean enabled = false;
 unsigned long enabledDebounce = 0;
 
-
 AccelStepper stepper(AccelStepper::FULL4WIRE, PIN_ST0, PIN_ST1, PIN_ST2, PIN_ST3, true);
-
 
 double wTargR;
 double wR;
@@ -60,11 +83,9 @@ double wL;
 double wPidL;
 PID pidL(&wL, &wPidL, &wTargL, MOTOR_KP, MOTOR_KI, MOTOR_KD, DIRECT);
 
-
 int pwmCR;
-double wCR;
-
 int pwmCL;
+double wCR;
 double wCL;
 
 
@@ -158,7 +179,13 @@ void SerialParser(void) {
 }
 
 
-// Handlers to take care of interrupts when the button is pushed
+/* Handlers to take care of interrupts when the button is pushed */
+
+void enableRisingHandler() {
+    // Just log the debounce time if it changes in the wrong direction
+    enabledDebounce = millis();
+}
+
 void enableFallingHandler() {
     // Check for debounce time
     if(millis() > enabledDebounce + ENABLED_DEBOUNCE_T) {
@@ -166,41 +193,60 @@ void enableFallingHandler() {
         enabled = !enabled;
         digitalWrite(PIN_EN_LED, enabled ? HIGH : LOW);
     }
+
     // Remember to log the debounce time
     enabledDebounce = millis();
 }
-void enableRisingHandler() {
-    // Just log the debounce time if it changes in the wrong direction
-    enabledDebounce = millis();
-}
 
 
-// Utility methods to handle motor IO
+/* Utility methods to handle motor IO */
+
 void readMotorVels() {
-    // Read
+    // Do the movement motors first
+    // Remember to check for 0 for PulseIn -- not moving
     int pR = pulseIn(PIN_RENC, HIGH, PULSE_IN_TOUT);
     int pL = pulseIn(PIN_LENC, HIGH, PULSE_IN_TOUT);
-    int pCR = pulseIn(PIN_CRENC, HIGH, PULSE_IN_TOUT);
-    int pCL = pulseIn(PIN_CLENC, HIGH, PULSE_IN_TOUT);
-    // Make sure we actually got a length of time
-    // See `DeadReckoning.ino` for magic number
-    wR = pR == 0 ? 0.0 : TWO_PI / (pR * 2.4886e-3);
-    wL = pL == 0 ? 0.0 : TWO_PI / (pL * 2.4886e-3);
-    wCR = pCR == 0 ? 0.0 : TWO_PI / (pCR * 2.4886e-3);
-    wCL = pCL == 0 ? 0.0 : TWO_PI / (pCL * 2.4886e-3);
+    wR = pR == 0 ? 0.0 : TWO_PI / (pR * PULSE_TO_FREQ);
+    wL = pL == 0 ? 0.0 : TWO_PI / (pL * PULSE_TO_FREQ);
+
+    // Only do the calculation for collectors if we have encoders
+    // Otherwise, just write 0
+    #if defined(ARDUINO_AVR_MEGA2560)
+        int pCR = pulseIn(PIN_CRENC, HIGH, PULSE_IN_TOUT);
+        int pCL = pulseIn(PIN_CLENC, HIGH, PULSE_IN_TOUT);
+        wCR = pCR == 0 ? 0.0 : TWO_PI / (pCR * PULSE_TO_FREQ);
+        wCL = pCL == 0 ? 0.0 : TWO_PI / (pCL * PULSE_TO_FREQ);
+    #elif defined(ARDUINO_AVR_UNO)
+        wCR = 0.0;
+        wCL = 0.0;
+    #else
+        #error "Only supported platforms are Uno and Mega"
+    #endif
 }
+
 void writeMotorDirs() {
     digitalWrite(PIN_RDIR1, wTargR >= 0.0 ? HIGH : LOW);
     digitalWrite(PIN_RDIR2, wTargR >= 0.0 ? LOW : HIGH);
     digitalWrite(PIN_LDIR1, wTargL >= 0.0 ? HIGH : LOW);
     digitalWrite(PIN_LDIR2, wTargL >= 0.0 ? LOW : HIGH);
 }
+
 void writeMotorVels() {
-    // Bound to integers 0 - 255
-    analogWrite(PIN_RPWM, max(0, min(255, (int) (W_TO_PWM * wPidR))));
-    analogWrite(PIN_LPWM, max(0, min(255, (int) (W_TO_PWM * wPidL))));
-    analogWrite(PIN_CRPWM, max(0, min(255, pwmCR)));
-    analogWrite(PIN_CLPWM, max(0, min(255, pwmCL)));
+    // Write the movement motors first
+    // Remember to bound to integers 0-255
+    analogWrite(PIN_RPWM, max(0, min(255, (int) abs(W_TO_PWM * wPidR))));
+    analogWrite(PIN_LPWM, max(0, min(255, (int) abs(W_TO_PWM * wPidL))));
+
+    // Different logic for collectors depending on platform
+    #if defined(ARDUINO_AVR_MEGA2560)
+        analogWrite(PIN_CRPWM, max(0, min(255, pwmCR)));
+        analogWrite(PIN_CLPWM, max(0, min(255, pwmCL)));
+    #elif defined(ARDUINO_AVR_UNO)
+        // Arbitrarily take their average
+        analogWrite(PIN_CPWM, max(0, min(255, (pwmCR + pwmCL) / 2)));
+    #else
+        #error "Only supported platforms are Uno and Mega"
+    #endif
 }
 
 
@@ -216,21 +262,33 @@ void setup()  {
     pinMode(PIN_EN_LED, OUTPUT);
     digitalWrite(PIN_EN_LED, LOW);
 
-    // Motors
-    pinMode(PIN_MEN, OUTPUT);
+    // Movement motor setup
     pinMode(PIN_RPWM, OUTPUT);
     pinMode(PIN_LPWM, OUTPUT);
-    pinMode(PIN_CRPWM, OUTPUT);
-    pinMode(PIN_CLPWM, OUTPUT);
     pinMode(PIN_RDIR1, OUTPUT);
     pinMode(PIN_RDIR2, OUTPUT);
     pinMode(PIN_LDIR1, OUTPUT);
     pinMode(PIN_LDIR2, OUTPUT);
-    digitalWrite(PIN_MEN, HIGH);
-
-    // Motor encoders
+    // Encoders
     pinMode(PIN_RENC, INPUT);
     pinMode(PIN_LENC, INPUT);
+
+    // Collector motor setup
+    #if defined(ARDUINO_AVR_MEGA2560)
+        pinMode(PIN_CRPWM, OUTPUT);
+        pinMode(PIN_CLPWM, OUTPUT);
+    #elif defined(ARDUINO_AVR_UNO)
+        pinMode(PIN_CPWM, OUTPUT);
+    #else
+        #error "Only supported platforms are Uno and Mega"
+    #endif
+    // Encoders
+    #if defined(ARDUINO_AVR_MEGA2560)
+        pinMode(PIN_CRENC, INPUT);
+        pinMode(PIN_CLENC, INPUT);
+    #elif !defined(ARDUINO_AVR_UNO)
+        #error "Only supported platforms are Uno and Mega"
+    #endif
 
     // PID setup
     pidR.SetMode(AUTOMATIC);
