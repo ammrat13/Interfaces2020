@@ -11,7 +11,8 @@
 #define PULSE_IN_TOUT (50000)       // For motor speed calculation
 
 // Stepper motor constants
-#define STEPPER_MAX_SPEED (500)
+#define STEPPER_MAX_SPEED (50)
+#define STEPPER_MAX_ACCEL (250)
 
 // For the enabled button
 #define ENABLED_DEBOUNCE_T (200)
@@ -173,10 +174,10 @@ void SerialParser(void) {
             GetVels();
 
         } else if (cmd == "smv") {
-            STRunToNewPosition(data);
+            STMove(data);
 
         } else if (cmd == "sdg") {
-            STStop();
+            STDistanceToGo();
         }
     }
 }
@@ -305,6 +306,8 @@ void setup()  {
 
     // Stepper setup
     stepper.setMaxSpeed(STEPPER_MAX_SPEED);
+    stepper.setSpeed(STEPPER_MAX_SPEED);
+    stepper.setAcceleration(STEPPER_MAX_ACCEL);
 }
 
 void loop() {

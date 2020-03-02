@@ -14,35 +14,19 @@ def build_cmd_str(cmd, args=None):
     return "@{cmd}%{args}$!".format(cmd=cmd, args=args)
 
 
-def find_port(baud):
-    ports = glob.glob("/dev/ttyUSB*") + glob.glob("/dev/ttyACM*")
-
-    for p in ports:
-        try:
-            sr = serial.Serial(p, baud)
-        except (serial.serialutil.SerialException, OSError) as e:
-            continue
-
-        sr.readline()
-        if sr:
-            return sr
-
-    return None
-
-
-
 class Arduino(object):
 
 
-    def __init__(self, baud=115200, port=None, sr=None):
+    def __init__(self, port, baud=115200, sr=None):
         if not sr:
-            if not port:
-                sr = find_port(baud)
-                if not sr:
-                    raise ValueError("Could not find port.")
-            else:
-                sr = serial.Serial(port, baud, timeout=timeout)
-                sr.readline()
+            # I should probably explain this bit somewhat
+            # For some reason, on bootup, we must wait a certain amount of 
+            #   time before the rest of the code will work as expected
+            # We must then call readline()
+            # Don't ask me why
+            sr = serial.Serial(port, baud, timeout=2)
+            sr.readline()
+            sr.timeout = None
 
         sr.flush()
         self.sr = sr
