@@ -2,6 +2,9 @@
 #include <AccelStepper.h>
 
 
+// For serial
+#define SERIAL_TIMEOUT (1)
+
 // Drive motor constants
 #define MOTOR_KP (.035)             // These constants are omega to omega
 #define MOTOR_KI (.0003)
@@ -11,8 +14,9 @@
 #define PULSE_IN_TOUT (50000)       // For motor speed calculation
 
 // Stepper motor constants
-#define STEPPER_MAX_SPEED (50)
-#define STEPPER_MAX_ACCEL (250)
+#define STEPPER_MAX_SPEED (150)
+#define STEPPER_MAX_ACCEL (STEPPER_MAX_SPEED*STEPPER_MAX_SPEED)
+#define NUM_STEPS_PER_CYCLE (10)
 
 // For the enabled button
 #define ENABLED_DEBOUNCE_T (200)
@@ -59,15 +63,15 @@
     #define PIN_LDIR1 (A2)
     #define PIN_LDIR2 (A3)
 
-    #define PIN_RENC1 (7)
-    #define PIN_RENC2 (8)
-    #define PIN_LENC1 (12)
-    #define PIN_LENC2 (13)
+    #define PIN_RENC1 (12)
+    #define PIN_RENC2 (13)
+    #define PIN_LENC1 (7)
+    #define PIN_LENC2 (8)
 
-    #define PIN_ST0 (4)
-    #define PIN_ST1 (5)
-    #define PIN_ST2 (6)
-    #define PIN_ST3 (7)
+    #define PIN_ST0 (3)
+    #define PIN_ST1 (4)
+    #define PIN_ST2 (5)
+    #define PIN_ST3 (6)
 #else
     #error "Only supported platforms are Uno and Mega"
 #endif
@@ -209,8 +213,8 @@ void readMotorVels() {
     // Do the movement motors first
     // Remember to do both direction and magnitude
     // Remember to check for 0 for PulseIn -- not moving
-    int pR = pulseIn(PIN_RENC1, HIGH, PULSE_IN_TOUT);
-    wR = digitalRead(PIN_RENC2) == HIGH ? 1.0 : -1.0;
+    int pR = pulseIn(PIN_RENC2, HIGH, PULSE_IN_TOUT);
+    wR = digitalRead(PIN_RENC1) == HIGH ? 1.0 : -1.0;
     wR *= pR == 0 ? 0.0 : TWO_PI / (pR * PULSE_TO_FREQ);
     int pL = pulseIn(PIN_LENC1, HIGH, PULSE_IN_TOUT);
     wL = digitalRead(PIN_LENC2) == HIGH ? 1.0 : -1.0;
@@ -260,6 +264,7 @@ void writeMotorVels() {
 
 void setup()  {
     Serial.begin(115200);
+    Serial.setTimeout(SERIAL_TIMEOUT);
     
     // Create the handler for enable
     pinMode(PIN_EN_DETECT, INPUT_PULLUP);
@@ -304,6 +309,7 @@ void setup()  {
     pidR.SetMode(AUTOMATIC);
     pidL.SetMode(AUTOMATIC);
 
+
     // Stepper setup
     stepper.setMaxSpeed(STEPPER_MAX_SPEED);
     stepper.setSpeed(STEPPER_MAX_SPEED);
@@ -318,4 +324,9 @@ void loop() {
     writeMotorVels();
 
     SerialParser();
+
+    int i = 0;
+    while(stepper.distanceToGo() != 0 && i < NUM_STEPS_PER_CYCLE){
+        i += stepper.runSpeedToPosition() ? 1 : 0;
+    }
 }

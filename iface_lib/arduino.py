@@ -72,7 +72,7 @@ class Arduino(object):
 
         rd = self.sr.readline().decode("utf-8").replace("\r\n", "")
         try:
-            return tuple(map(int, rd.split(',')))
+            return tuple(map(float, rd.split(',')))
         except:
             return None
 
