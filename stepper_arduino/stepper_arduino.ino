@@ -65,6 +65,9 @@ void setup()  {
     stepper.setMaxSpeed(STEPPER_MAX_SPEED);
     stepper.setSpeed(STEPPER_MAX_SPEED);
     stepper.setAcceleration(STEPPER_MAX_ACCEL);
+
+    // Announce our presence
+    Serial.println("stepper");
 }
 
 void loop() {
