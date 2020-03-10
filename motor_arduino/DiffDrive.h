@@ -217,6 +217,8 @@ DiffDrive<pwm_left, dir1_left, dir2_left, enca_left, encb_left,
 
     prev_time_pid = micros();
     prev_time_odom = micros();
+
+    Serial.println("motor");
 }
 
 template<int pwm_left, int dir1_left, int dir2_left, int enca_left, int encb_left,
