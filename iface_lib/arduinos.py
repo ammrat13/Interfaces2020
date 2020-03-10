@@ -8,14 +8,13 @@ class Arduinos:
         self.recent_rcmd = 0
         self.recent_lcmd = 0
         self.recent_aggr = 0
-        self.recent_stcmd = 0
 
         # Read from both of the ports
         sr1 = serial.Serial(portA, baud, timeout=tout)
+        sr2 = serial.Serial(portA, baud, timeout=tout)
+        # Wait for the arduinos to boot, then read the result
         time.sleep(3)
         sr1res = sr1.readline().decode("utf-8")[0:-2]
-        sr2 = serial.Serial(portA, baud, timeout=tout)
-        time.sleep(3)
         sr2res = sr2.readline().decode("utf-8")[0:-2]
 
         # Figure out which one is which
@@ -60,37 +59,26 @@ class Arduinos:
     def get_vels(self):
         # Just set the target velocities again
         # Board provides no way of just reading
-        self.set_target_vels(
+        return self.set_target_vels(
             self.recent_rcmd, self.recent_lcmd, self.recent_aggr)
 
-    def set_stepper_target(self, pos):
-        # Store this if needed for the other methods
-        self.recent_stcmd = pos
-        # Can generate an exception
-        # If we fail for any reason, return None
+    def prepare_for_block(self):
         try:
             # Write to the Serial
-            self.sr_stepper.write(str.encode(f"{pos}\n"))
+            self.sr_stepper.write(str.encode(f"P\n"))
             self.sr_stepper.flush()
-            # Parse the result
-            ret = list(
-                self.sr_stepper.readline().decode("utf-8")[1:-3].split(","))
-            ret[0] = int(ret[0])
-            ret[1] = bool(int(ret[1]))
-            return tuple(ret)
+            # No result for this one
         except:
-            return None
+            pass
 
-    def get_stepper_dtg(self):
-        # Just recommand and return the right one
+    def query_stepper_state(self):
+        # The stepper board handles enabled as well
         try:
-            self.set_stepper_target(self.recent_stcmd)[0]
+            # Write the command
+            self.sr_stepper.write(str.encode("Q\n"))
+            self.sr_stepper.flush()
+            # Parse the result, stripping the <, >, and \r\n
+            return tuple(map(lambda x: bool(int(x)),
+                self.sr_stepper.readline()[1:-3].split(",")))
         except:
-            return None
-
-    def get_enabled(self):
-        # Just recommand and return the right one
-        try:
-            self.set_stepper_target(self.recent_stcmd)[1]
-        except:
-            return None
+            return (None, None)

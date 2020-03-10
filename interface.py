@@ -57,7 +57,7 @@ def is_enabled():
         return None
 
     elif system_type == "jetson":
-        return boards.get_enabled()
+        return boards.query_stepper_state()[1]
 
     else:
         raise ValueError('System type has not been set')
@@ -107,22 +107,22 @@ def read_wheel_velocities():
         raise ValueError('System type has not been set')
 
 
-def set_stepper_target(target):
+def get_block_async():
 
     if system_type == "sim":
-        return None
+        pass
 
     elif system_type == "raspi":
-        return None
+        pass
 
     elif system_type == "jetson":
-        return boards.set_stepper_target(target)
+        boards.prepare_for_block()
 
     else:
         raise ValueError('System type has not been set')
 
 
-def get_stepper_dtg():
+def is_done_getting_block():
 
     if system_type == "sim":
         return None
@@ -131,7 +131,7 @@ def get_stepper_dtg():
         return None
 
     elif system_type == "jetson":
-        return boards.get_stepper_dtg()
+        return boards.query_stepper_state()[0]
 
     else:
         raise ValueError('System type has not been set')
