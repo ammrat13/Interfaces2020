@@ -5,23 +5,20 @@ Author:        Ammar Ratnani
 Last Modified: Ammar on 2/22
 """
 
-from simple_pid import PID
 from math import sin, cos, pi, sqrt
 from time import time
 
-from iface_lib.arduino import Arduino
+import motor_arduino
 import sim
 
 
 
 system_type = None
-board = None
 
 
 def set_system(stype, sim_config=None):
     
     global system_type
-    global board
     
     system_type = stype
 
@@ -32,7 +29,7 @@ def set_system(stype, sim_config=None):
         pass
 
     elif system_type == "jetson":
-        board = Arduino()
+        motor_arduino.setup('/dev/ttyUSB0')
 
     else:
         raise ValueError(f'Invalid system type: {stype}')
@@ -59,7 +56,7 @@ def is_enabled():
         return None
 
     elif system_type == "jetson":
-        return board.enabled()
+        return None
 
     else:
         raise ValueError('System type has not been set')
@@ -86,7 +83,7 @@ def command_wheel_velocities(omega_r, omega_l):
         pass
 
     elif system_type == "jetson":
-        board.setTargetVels(omega_r, omega_l)
+        motor_arduino.set_target_vels(omega_r, omega_l)
 
     else:
         raise ValueError('System type has not been set')
@@ -102,7 +99,7 @@ def read_wheel_velocities():
         return None
 
     elif system_type == "jetson":
-        return board.getVels()
+        return motor_arduino.get_vels()
 
     else:
         raise ValueError('System type has not been set')
