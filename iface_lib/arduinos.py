@@ -3,7 +3,7 @@ import time
 
 class Arduinos:
 
-    def __init__(portA='/dev/ttyUSB0', portB='/dev/ttyUSB1', baud=115200, tout=.05):
+    def __init__(self, portA='/dev/ttyACM0', portB='/dev/ttyACM1', baud=115200, tout=.5):
         # Set default values
         self.recent_rcmd = 0
         self.recent_lcmd = 0
@@ -12,8 +12,10 @@ class Arduinos:
 
         # Read from both of the ports
         sr1 = serial.Serial(portA, baud, timeout=tout)
+        time.sleep(3)
         sr1res = sr1.readline().decode("utf-8")[0:-2]
         sr2 = serial.Serial(portA, baud, timeout=tout)
+        time.sleep(3)
         sr2res = sr2.readline().decode("utf-8")[0:-2]
 
         # Figure out which one is which
@@ -51,7 +53,7 @@ class Arduinos:
             self.sr_motor.flush()
             # Parse the result
             return tuple(map(int,
-                self.sr_motor.readline().decode("utf-8")[1:-2].split(",")))
+                self.sr_motor.readline().decode("utf-8")[1:-3].split(",")))
         except:
             return None
 
@@ -68,11 +70,11 @@ class Arduinos:
         # If we fail for any reason, return None
         try:
             # Write to the Serial
-            self.sr_stepper.write(str.encode(f"{cmd}\n"))
+            self.sr_stepper.write(str.encode(f"{pos}\n"))
             self.sr_stepper.flush()
             # Parse the result
             ret = list(
-                self.sr_stepper.readline().decode("utf-8")[1:-2].split(","))
+                self.sr_stepper.readline().decode("utf-8")[1:-3].split(","))
             ret[0] = int(ret[0])
             ret[1] = bool(int(ret[1]))
             return tuple(ret)

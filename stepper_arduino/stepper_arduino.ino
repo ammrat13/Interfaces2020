@@ -5,7 +5,7 @@
 #define SERIAL_TIMEOUT (1)
 
 // Stepper motor constants
-#define STEPPER_MAX_SPEED (150)
+#define STEPPER_MAX_SPEED (300)
 #define STEPPER_MAX_ACCEL (STEPPER_MAX_SPEED*STEPPER_MAX_SPEED)
 
 // For the enabled button
@@ -14,12 +14,12 @@
 
 // Pin setup
 #define PIN_EN_DETECT (3)
-#define PIN_EN_LED (49)
+#define PIN_EN_LED (4)
 
-#define PIN_ST0 (50)
-#define PIN_ST1 (51)
-#define PIN_ST2 (52)
-#define PIN_ST3 (53)
+#define PIN_ST0 (8)
+#define PIN_ST1 (9)
+#define PIN_ST2 (10)
+#define PIN_ST3 (11)
 
 
 boolean enabled = false;
@@ -75,7 +75,7 @@ void loop() {
     if(Serial.readBytesUntil('\n', buf, 64)) {
         // We only ever get the target position on Serial
         // We know what we need to so
-        stepper.move(atoi(buf));
+        stepper.moveTo(atoi(buf));
 
         // Print out the result in format <DTG,Enabled>
         Serial.print("<");
