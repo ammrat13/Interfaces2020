@@ -6,6 +6,9 @@ import time
 
 
 sr = None
+recent_rcmd = 0
+recent_lcmd = 0
+recent_aggr = 0
 
 
 def setup(self, port, baud=115200, tout=.05):
