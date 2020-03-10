@@ -11,7 +11,7 @@ recent_lcmd = 0
 recent_aggr = 0
 
 
-def setup(self, port, baud=115200, tout=.05):
+def setup(port, baud=115200, tout=.05):
     global sr
     global recent_rcmd
     global recent_lcmd
@@ -24,13 +24,13 @@ def setup(self, port, baud=115200, tout=.05):
     recent_lcmd = 0
     recent_aggr = 0
 
-def close(self):
+def close():
     global sr
     if sr.isOpen():
         sr.flush()
         sr.close()
 
-def set_target_vels(self, w_r, w_l, aggr):
+def set_target_vels(w_r, w_l, aggr):
     global sr
     global recent_rcmd
     global recent_lcmd
@@ -51,7 +51,7 @@ def set_target_vels(self, w_r, w_l, aggr):
         return None
 
 
-def get_vels(self):
+def get_vels():
     global sr
     global recent_rcmd
     global recent_lcmd

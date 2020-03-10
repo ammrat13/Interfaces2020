@@ -9,6 +9,7 @@ from math import sin, cos, pi, sqrt
 from time import time
 
 import motor_arduino
+import stepper_arduino
 import sim
 
 
@@ -30,6 +31,7 @@ def set_system(stype, sim_config=None):
 
     elif system_type == "jetson":
         motor_arduino.setup('/dev/ttyUSB0')
+        stepper_arduino.setup('/dev/ttyUSB1')
 
     else:
         raise ValueError(f'Invalid system type: {stype}')
@@ -56,7 +58,7 @@ def is_enabled():
         return None
 
     elif system_type == "jetson":
-        return None
+        return stepper_arduino.get_enabled()
 
     else:
         raise ValueError('System type has not been set')
@@ -88,6 +90,7 @@ def command_wheel_velocities(omega_r, omega_l):
     else:
         raise ValueError('System type has not been set')
 
+
 def read_wheel_velocities():
 
     # Return format is a tuple of right and left
@@ -100,6 +103,36 @@ def read_wheel_velocities():
 
     elif system_type == "jetson":
         return motor_arduino.get_vels()
+
+    else:
+        raise ValueError('System type has not been set')
+
+
+def set_stepper_target(target):
+
+    if system_type == "sim":
+        return None
+
+    elif system_type == "raspi":
+        return None
+
+    elif system_type == "jetson":
+        return stepper_arduino.set_stepper_target(target)
+
+    else:
+        raise ValueError('System type has not been set')
+
+
+def get_stepper_dtg():
+
+    if system_type == "sim":
+        return None
+
+    elif system_type == "raspi":
+        return None
+
+    elif system_type == "jetson":
+        return stepper_arduino.get_stepper_dtg()
 
     else:
         raise ValueError('System type has not been set')

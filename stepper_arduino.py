@@ -9,7 +9,7 @@ sr = None
 recent_cmd = 0
 
 
-def setup(self, port, baud=115200, tout=.05):
+def setup(port, baud=115200, tout=.05):
     global sr
     global recent_cmd
     # Make sure to wait for the Arduino to boot
@@ -18,13 +18,13 @@ def setup(self, port, baud=115200, tout=.05):
     # Also store the most recent commanded velocities
     recent_cmd = 0
 
-def close(self):
+def close():
     global sr
     if sr.isOpen():
         sr.flush()
         sr.close()
 
-def set_stepper_target(self, pos):
+def set_stepper_target(pos):
     global sr
     global recent_cmd
     # Store this if needed for the other methods
@@ -44,15 +44,21 @@ def set_stepper_target(self, pos):
         return None
 
 
-def get_stepper_dtg(self):
+def get_stepper_dtg():
     global sr
     global recent_cmd
     # Just recommand and return the right one
-    set_stepper_target(recent_cmd)[0]
+    try:
+        set_stepper_target(recent_cmd)[0]
+    except:
+        return None
 
 
-def get_enabled(self):
+def get_enabled():
     global sr
     global recent_cmd
     # Just recommand and return the right one
-    set_stepper_target(recent_cmd)[1]
+    try:
+        set_stepper_target(recent_cmd)[1]
+    except:
+        return None
